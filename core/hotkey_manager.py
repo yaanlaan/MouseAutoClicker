@@ -1,9 +1,9 @@
-
 import threading
 import time
 from PyQt5.QtCore import QObject, pyqtSignal
-from pynput import keyboard
+from pynput import keyboard, mouse
 from pynput.keyboard import Key, KeyCode
+from pynput.mouse import Button
 
 class HotkeyManager(QObject):
     """热键管理器，处理全局热键监听和触发"""
@@ -25,123 +25,104 @@ class HotkeyManager(QObject):
         self.current_hotkey = hotkey if hotkey else self.default_hotkey
 
         # 热键监听器
-        self.listener = None
+        self.keyboard_listener = None
+        self.mouse_listener = None
         self.start_listener()
 
     def start_listener(self):
         """启动热键监听器"""
-        if self.listener:
-            self.listener.stop()
+        if self.keyboard_listener:
+            self.keyboard_listener.stop()
+        if self.mouse_listener:
+            self.mouse_listener.stop()
 
         # 解析热键字符串
         keys = self.parse_hotkey(self.current_hotkey)
-
         # 创建一个集合来跟踪当前按下的键
         self.pressed_keys = set()
 
-        # 定义回调函数
+        # 定义键盘回调函数
         def on_press(key):
-            # 转换键对象以便于比较
             key_str = self.normalize_key(key)
-
-            # 将按下的键添加到集合
             self.pressed_keys.add(key_str)
-
-            # 检查是否匹配热键组合
             if all(k in self.pressed_keys for k in keys):
-                # 触发信号
+                self.pressed_keys.remove(key_str)
                 self.hotkey_pressed.emit()
 
         def on_release(key):
-            # 转换键对象以便于比较
             key_str = self.normalize_key(key)
-
-            # 将释放的键从集合中移除
             if key_str in self.pressed_keys:
                 self.pressed_keys.remove(key_str)
+            return True
 
-            return True  # 继续监听
+        # 定义鼠标回调函数
+        def on_click(x, y, button, pressed):
+            key_str = self.normalize_key(button)
+            
+            if pressed:
+                self.pressed_keys.add(key_str)
+                if all(k in self.pressed_keys for k in keys):
+                    self.pressed_keys.remove(key_str)
+                    self.hotkey_pressed.emit()
+            else:
+                if key_str in self.pressed_keys:
+                    self.pressed_keys.remove(key_str)
 
-        # 启动监听器
-        self.listener = keyboard.Listener(on_press=on_press, on_release=on_release)
-        self.listener.daemon = True
-        self.listener.start()
+        # 启动键盘监听器
+        self.keyboard_listener = keyboard.Listener(on_press=on_press, on_release=on_release)
+        self.keyboard_listener.daemon = True
+        self.keyboard_listener.start()
+
+        # 启动鼠标监听器
+        self.mouse_listener = mouse.Listener(on_click=on_click)
+        self.mouse_listener.daemon = True
+        self.mouse_listener.start()
 
     def normalize_key(self, key):
-        """将pynput键对象转换为字符串表示"""
         if isinstance(key, Key):
-            # 特殊键，如F1-F12, Ctrl, Shift等
             return key.name
         if isinstance(key, KeyCode):
-            # 常规按键
             return key.char if key.char else f"KeyCode({key.vk})"
-        # 其他情况，直接返回字符串表示
+        if isinstance(key, Button):
+            return f"mouse_{key.name}"
         return str(key)
 
     def parse_hotkey(self, hotkey_str):
-        """
-        解析热键字符串为键列表
-
-        参数:
-            hotkey_str (str): 热键字符串，如"F6"或"Ctrl+Shift+C"
-
-        返回:
-            list: 键字符串列表
-        """
         parts = hotkey_str.split('+')
         result = []
 
         for part in parts:
             part = part.strip().lower()
 
-            # 处理特殊键
             if part == 'ctrl':
-                result.append('ctrl_l')  # 左Ctrl键
+                result.append('ctrl_l')
             elif part == 'alt':
-                result.append('alt_l')  # 左Alt键
+                result.append('alt_l')
             elif part == 'shift':
-                result.append('shift_l')  # 左Shift键
+                result.append('shift_l')
             elif part.startswith('f') and part[1:].isdigit() and 1 <= int(part[1:]) <= 12:
-                # F1-F12键
                 result.append(f'f{part[1:]}')
+            elif part in ['mouse_left', 'mouse_right', 'mouse_middle', 'mouse_x1', 'mouse_x2']:
+                result.append(part)
             else:
-                # 普通键
                 result.append(part)
 
         return result
 
     def set_hotkey(self, hotkey):
-        """
-        设置新的热键
-
-        参数:
-            hotkey (str): 新的热键字符串
-        """
         self.current_hotkey = hotkey
-
-        # 重启监听器以应用新热键
         self.start_listener()
 
     def get_current_hotkey(self):
-        """
-        获取当前设置的热键
-
-        返回:
-            str: 当前热键字符串
-        """
         return self.current_hotkey
 
     def get_current_hotkey_text(self):
-        """
-        获取当前热键的显示文本
-
-        返回:
-            str: 格式化的热键文本
-        """
         return self.current_hotkey
 
     def unregister_hotkey(self):
-        """注销热键监听器"""
-        if self.listener:
-            self.listener.stop()
-            self.listener = None
+        if self.keyboard_listener:
+            self.keyboard_listener.stop()
+            self.keyboard_listener = None
+        if self.mouse_listener:
+            self.mouse_listener.stop()
+            self.mouse_listener = None

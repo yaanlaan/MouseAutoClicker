@@ -1,7 +1,7 @@
-
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton, QHBoxLayout
 from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtGui import QKeySequence
+from pynput import mouse
 
 class HotkeyDialog(QDialog):
     def __init__(self, current_hotkey=None, parent=None):
@@ -72,9 +72,28 @@ class HotkeyDialog(QDialog):
             self.listen_button.setText("停止监听")
             self.new_label.setText("请按下热键...")
             self.grabKeyboard()  # 捕获键盘输入
+            
+            # 启动鼠标监听器
+            self.mouse_listener = mouse.Listener(on_click=self.on_click)
+            self.mouse_listener.start()
         else:
             self.listen_button.setText("开始监听")
             self.releaseKeyboard()
+            
+            # 停止鼠标监听器
+            if self.mouse_listener:
+                self.mouse_listener.stop()
+
+    def on_click(self, x, y, button, pressed):
+        """鼠标点击事件处理"""
+        if not self.is_listening:
+            return
+        if pressed:
+            if button == mouse.Button.middle:
+                self.new_hotkey = "mouse_middle"
+                self.new_label.setText("mouse_middle")
+                self.ok_button.setEnabled(True)
+                self.toggle_listening()
 
     def keyPressEvent(self, event):
         """键盘按下事件处理"""
