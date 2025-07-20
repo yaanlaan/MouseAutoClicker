@@ -37,6 +37,7 @@ def build_exe():
         "--hidden-import=PyQt5.QtWidgets",  # 确保QtWidgets模块被包含
         "--hidden-import=PyQt5.sip",  # 确保sip模块被包含
         "--collect-all=PyQt5",  # 收集所有PyQt5相关的模块和插件
+        "--uac-admin",  # 以管理员权限运行
         "main.py"  # 主程序文件
     ]
 
