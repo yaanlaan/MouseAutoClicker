@@ -43,7 +43,7 @@ class MainWindow(QMainWindow):
         """设置用户界面"""
         # 设置窗口属性
         self.setWindowTitle(self.language_manager.get_text("app_title"))
-        self.setFixedSize(400, 300)
+        self.setFixedSize(400, 400)
         self.setWindowIcon(QIcon(resource_path("resources/icon.png")))
 
         # 创建中心部件
@@ -80,6 +80,43 @@ class MainWindow(QMainWindow):
 
         interval_group.setLayout(interval_layout)
         main_layout.addWidget(interval_group)
+        
+        # 随机抖动设置
+        jitter_group = QGroupBox(self.language_manager.get_text("jitter_group"))
+        jitter_layout = QVBoxLayout()
+        
+        # 随机抖动提示信息
+        jitter_tip = QLabel(self.language_manager.get_text("jitter_tip"))
+        jitter_tip.setWordWrap(True)
+        jitter_layout.addWidget(jitter_tip)
+        
+        # 启用随机抖动选项
+        jitter_check_layout = QHBoxLayout()
+        self.jitter_checkbox = QRadioButton(self.language_manager.get_text("jitter_enable"))
+        self.jitter_checkbox.setChecked(self.config_manager.get_jitter_enabled())
+        self.jitter_checkbox.toggled.connect(self.toggle_jitter)
+        jitter_check_layout.addWidget(self.jitter_checkbox)
+        jitter_check_layout.addStretch()
+        jitter_layout.addLayout(jitter_check_layout)
+        
+        # 抖动幅度设置
+        jitter_percent_layout = QHBoxLayout()
+        jitter_percent_layout.addWidget(QLabel(self.language_manager.get_text("jitter_percent_label")))
+        
+        self.jitter_percent_spinbox = QSpinBox()
+        self.jitter_percent_spinbox.setMinimum(5)
+        self.jitter_percent_spinbox.setMaximum(50)
+        self.jitter_percent_spinbox.setValue(self.config_manager.get_jitter_percent())
+        self.jitter_percent_spinbox.valueChanged.connect(self.update_jitter_percent)
+        self.jitter_percent_spinbox.setEnabled(self.config_manager.get_jitter_enabled())
+        jitter_percent_layout.addWidget(self.jitter_percent_spinbox)
+        
+        jitter_percent_layout.addWidget(QLabel(self.language_manager.get_text("percent_label")))
+        jitter_percent_layout.addStretch()
+        jitter_layout.addLayout(jitter_percent_layout)
+        
+        jitter_group.setLayout(jitter_layout)
+        main_layout.addWidget(jitter_group)
 
         # 热键设置
         hotkey_group = QGroupBox(self.language_manager.get_text("hotkey_group"))
@@ -243,7 +280,12 @@ class MainWindow(QMainWindow):
             self.tray_icon.setIcon(QIcon(resource_path("resources/icon_active.png")))
 
             # 创建并启动自动点击线程
-            self.auto_clicker_thread = AutoClickerThread(self.click_interval)
+            self.auto_clicker_thread = AutoClickerThread(
+                self.click_interval,
+                self.config_manager.get_jitter_enabled(),
+                self.config_manager.get_jitter_percent()
+            )
+            # 不连接调试信号
             self.auto_clicker_thread.start()
 
     def stop_clicking(self):
@@ -277,6 +319,29 @@ class MainWindow(QMainWindow):
         # 更新托盘菜单中的间隔信息
         self.update_tray_menu_info()
 
+    def toggle_jitter(self, enabled):
+        """启用或禁用随机抖动"""
+        self.config_manager.set_jitter_enabled(enabled)
+        # 立即保存配置到磁盘
+        self.config_manager.save_config()
+        
+        # 更新UI状态
+        self.jitter_percent_spinbox.setEnabled(enabled)
+        
+        # 如果正在点击，更新线程的抖动设置
+        if self.is_clicking and self.auto_clicker_thread:
+            self.auto_clicker_thread.set_jitter_enabled(enabled)
+            
+    def update_jitter_percent(self, value):
+        """更新随机抖动幅度"""
+        self.config_manager.set_jitter_percent(value)
+        # 立即保存配置到磁盘
+        self.config_manager.save_config()
+        
+        # 如果正在点击，更新线程的抖动幅度
+        if self.is_clicking and self.auto_clicker_thread:
+            self.auto_clicker_thread.set_jitter_percent(value)
+            
     def change_language(self, index):
         """更改界面语言"""
         language_code = self.language_combo.itemData(index)

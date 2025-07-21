@@ -4,6 +4,10 @@ DEFAULT_INTERVAL = 1000  # 默认间隔：1000毫秒（1秒）
 MIN_INTERVAL = 50       # 最小间隔：50毫秒
 MAX_INTERVAL = 60000    # 最大间隔：60000毫秒（60秒）
 
+# 随机抖动设置
+DEFAULT_JITTER_ENABLED = False  # 默认不启用随机抖动
+DEFAULT_JITTER_PERCENT = 20    # 默认抖动幅度：20%
+
 # 热键设置
 DEFAULT_HOTKEY = "F6"   # 默认热键
 
@@ -31,6 +35,13 @@ TRANSLATIONS = {
         "interval_group": "点击间隔设置",
         "interval_label": "间隔:",
         "ms_label": "毫秒",
+        
+        # 随机抖动相关
+        "jitter_group": "随机抖动设置",
+        "jitter_enable": "启用随机抖动",
+        "jitter_percent_label": "抖动幅度:",
+        "percent_label": "%",
+        "jitter_tip": "启用随机抖动可以使点击间隔在设定值附近随机变化，更像真人操作",
 
         # 热键相关
         "hotkey_group": "热键设置",
@@ -67,6 +78,13 @@ TRANSLATIONS = {
         "interval_group": "Click Interval Settings",
         "interval_label": "Interval:",
         "ms_label": "ms",
+        
+        # 随机抖动相关
+        "jitter_group": "Random Jitter Settings",
+        "jitter_enable": "Enable Random Jitter",
+        "jitter_percent_label": "Jitter Amount:",
+        "percent_label": "%",
+        "jitter_tip": "Enabling random jitter makes click intervals vary randomly around the set value, more like human operation",
 
         # 热键相关
         "hotkey_group": "Hotkey Settings",
