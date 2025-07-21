@@ -11,23 +11,26 @@ class HotkeyManager(QObject):
     # 定义信号
     hotkey_pressed = pyqtSignal()
 
-    def __init__(self, hotkey=None):
+    def __init__(self, hotkey=None, enabled=True):
         """
         初始化热键管理器
 
         参数:
             hotkey (str): 热键字符串，如"F6"或"Ctrl+Shift+C"
+            enabled (bool): 热键是否启用
         """
         super().__init__()
 
         # 默认热键为F6
         self.default_hotkey = "F6"
         self.current_hotkey = hotkey if hotkey else self.default_hotkey
+        self.enabled = enabled
 
         # 热键监听器
         self.keyboard_listener = None
         self.mouse_listener = None
-        self.start_listener()
+        if self.enabled:
+            self.start_listener()
 
     def start_listener(self):
         """启动热键监听器"""
@@ -126,3 +129,24 @@ class HotkeyManager(QObject):
         if self.mouse_listener:
             self.mouse_listener.stop()
             self.mouse_listener = None
+
+    def set_enabled(self, enabled):
+        """设置热键是否启用
+
+        参数:
+            enabled (bool): 是否启用热键
+        """
+        if self.enabled != enabled:
+            self.enabled = enabled
+            if enabled:
+                self.start_listener()
+            else:
+                self.unregister_hotkey()
+
+    def is_enabled(self):
+        """获取热键是否启用
+
+        返回:
+            bool: 热键是否启用
+        """
+        return self.enabled

@@ -29,7 +29,7 @@ class MainWindow(QMainWindow):
         self.click_interval = self.config_manager.get_click_interval()
 
         # 初始化热键管理器
-        self.hotkey_manager = HotkeyManager(self.config_manager.get_hotkey())
+        self.hotkey_manager = HotkeyManager(self.config_manager.get_hotkey(), self.config_manager.get_hotkey_enabled())
         self.hotkey_manager.hotkey_pressed.connect(self.toggle_clicking)
 
         # 设置UI
@@ -151,6 +151,12 @@ class MainWindow(QMainWindow):
         self.tray_info_language = QAction(f"语言模式: {LANGUAGES[self.config_manager.get_language()]}")
         self.tray_info_language.setEnabled(False)
         self.tray_menu.addAction(self.tray_info_language)
+
+        # 添加热键状态信息
+        hotkey_text = "已启用" if self.config_manager.get_hotkey_enabled() else "已禁用"
+        self.tray_info_hotkey = QAction(f"热键状态: {hotkey_text}")
+        self.tray_info_hotkey.setEnabled(False)
+        self.tray_menu.addAction(self.tray_info_hotkey)
         
         self.tray_menu.addSeparator()
 
@@ -158,6 +164,12 @@ class MainWindow(QMainWindow):
         self.tray_action_toggle = QAction(self.language_manager.get_text("start_button"))
         self.tray_action_toggle.triggered.connect(self.toggle_clicking)
         self.tray_menu.addAction(self.tray_action_toggle)
+
+        # 添加热键启用/禁用菜单项
+        toggle_text = "禁用热键" if self.config_manager.get_hotkey_enabled() else "启用热键"
+        self.tray_action_toggle_hotkey = QAction(toggle_text)
+        self.tray_action_toggle_hotkey.triggered.connect(self.toggle_hotkey_enabled)
+        self.tray_menu.addAction(self.tray_action_toggle_hotkey)
 
         self.tray_action_show = QAction(self.language_manager.get_text("show_window"))
         self.tray_action_show.triggered.connect(self.show_and_activate)
@@ -201,6 +213,12 @@ class MainWindow(QMainWindow):
         self.tray_info_interval.setText(f"点击间隔: {self.click_interval}ms")
         # 更新语言模式信息
         self.tray_info_language.setText(f"语言模式: {LANGUAGES[self.config_manager.get_language()]}")
+        # 更新热键状态信息
+        hotkey_text = "已启用" if self.hotkey_manager.is_enabled() else "已禁用"
+        self.tray_info_hotkey.setText(f"热键状态: {hotkey_text}")
+        # 更新热键开关菜单项的文本
+        toggle_text = "禁用热键" if self.hotkey_manager.is_enabled() else "启用热键"
+        self.tray_action_toggle_hotkey.setText(toggle_text)
         # 更新菜单项的文本
         self.tray_action_show.setText(self.language_manager.get_text("show_window"))
         self.tray_action_restart.setText(self.language_manager.get_text("restart"))
@@ -290,6 +308,32 @@ class MainWindow(QMainWindow):
                 self.config_manager.set_hotkey(new_hotkey)
                 # 立即保存配置到磁盘，确保热键设置被记住
                 self.config_manager.save_config()
+
+
+    def toggle_hotkey_enabled(self):
+        """切换热键启用/禁用状态"""
+        # 获取当前状态并切换
+        current_state = self.hotkey_manager.is_enabled()
+        new_state = not current_state
+
+        # 更新热键管理器状态
+        self.hotkey_manager.set_enabled(new_state)
+
+        # 更新配置
+        self.config_manager.set_hotkey_enabled(new_state)
+        self.config_manager.save_config()
+
+        # 更新托盘菜单信息
+        self.update_tray_menu_info()
+
+        # 显示状态变更提示
+        status_text = "启用" if new_state else "禁用"
+        self.tray_icon.showMessage(
+            self.language_manager.get_text("app_title"),
+            f"热键已{status_text}",
+            QSystemTrayIcon.Information,
+            3000
+        )
 
     def closeEvent(self, event):
         """窗口关闭事件处理"""

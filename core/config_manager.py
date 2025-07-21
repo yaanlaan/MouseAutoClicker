@@ -21,6 +21,9 @@ class ConfigManager:
         # 热键
         self.hotkey = self.settings.value("hotkey", DEFAULT_HOTKEY, type=str)
 
+        # 热键启用状态
+        self.hotkey_enabled = self.settings.value("hotkey_enabled", True, type=bool)
+
         # 语言
         self.language = self.settings.value("language", DEFAULT_LANGUAGE, type=str)
 
@@ -34,6 +37,9 @@ class ConfigManager:
 
         # 热键
         self.settings.setValue("hotkey", self.hotkey)
+
+        # 热键启用状态
+        self.settings.setValue("hotkey_enabled", self.hotkey_enabled)
 
         # 语言
         self.settings.setValue("language", self.language)
@@ -75,3 +81,11 @@ class ConfigManager:
     def set_exit_on_close(self, value):
         """设置关闭行为"""
         self.exit_on_close = value
+
+    def get_hotkey_enabled(self):
+        """获取热键启用状态"""
+        return self.hotkey_enabled
+
+    def set_hotkey_enabled(self, enabled):
+        """设置热键启用状态"""
+        self.hotkey_enabled = enabled
