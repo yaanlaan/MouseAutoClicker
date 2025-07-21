@@ -3,7 +3,7 @@ import os
 import yaml
 from pathlib import Path
 
-from utils.constants import DEFAULT_INTERVAL, DEFAULT_LANGUAGE, DEFAULT_HOTKEY
+from utils.constants import DEFAULT_INTERVAL, DEFAULT_LANGUAGE, DEFAULT_HOTKEY, DEFAULT_JITTER_ENABLED, DEFAULT_JITTER_PERCENT
 
 class ConfigManager:
     """配置管理器，负责保存和加载用户设置"""
@@ -29,7 +29,9 @@ class ConfigManager:
             "hotkey": DEFAULT_HOTKEY,
             "hotkey_enabled": True,
             "language": DEFAULT_LANGUAGE,
-            "exit_on_close": False
+            "exit_on_close": False,
+            "jitter_enabled": DEFAULT_JITTER_ENABLED,
+            "jitter_percent": DEFAULT_JITTER_PERCENT
         }
 
         # 如果配置文件存在，则从文件加载
@@ -89,4 +91,20 @@ class ConfigManager:
     def set_exit_on_close(self, value):
         """设置关闭行为"""
         self.config["exit_on_close"] = value
+        
+    def get_jitter_enabled(self):
+        """获取随机抖动启用状态"""
+        return self.config["jitter_enabled"]
+        
+    def set_jitter_enabled(self, enabled):
+        """设置随机抖动启用状态"""
+        self.config["jitter_enabled"] = enabled
+        
+    def get_jitter_percent(self):
+        """获取随机抖动幅度百分比"""
+        return self.config["jitter_percent"]
+        
+    def set_jitter_percent(self, percent):
+        """设置随机抖动幅度百分比"""
+        self.config["jitter_percent"] = percent
 
